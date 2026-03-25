@@ -97,7 +97,7 @@ def main():
     mae = mean_absolute_error(y_test, y_pred)
     re = np.mean(np.abs((y_test - y_pred) / y_test)) * 100
 
-    print(f'    测试集 R² (决定系数): {r2:.4f}')
+    print(f'    测试集 R2 (决定系数): {r2:.4f}')
     print(f'    测试集 RMSE (均方根误差): {rmse:.4f}')
 
     plt.figure(figsize=(8, 6))
@@ -107,7 +107,7 @@ def main():
     plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='1:1 Line')
     plt.xlabel(f'Measured {target_col}')
     plt.ylabel(f'Predicted {target_col}')
-    plt.title(f'RF Model Evaluation\nR²={r2:.3f}, RMSE={rmse:.3f}')
+    plt.title(f'RF Model Evaluation\nR2={r2:.3f}, RMSE={rmse:.3f}')
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.savefig(scatter_plot_path, dpi=300)
@@ -115,7 +115,7 @@ def main():
     plt.close()
 
     if r2 < 0.3:
-        print('警告: 模型精度较低 (R² < 0.3)，反演结果可能不可靠。')
+        print('警告: 模型精度较低 (R2 < 0.3)，反演结果可能不可靠。')
 
     print('\n>>> 步骤 4: 读取影像并进行反演...')
     with rasterio.open(img_path) as src:

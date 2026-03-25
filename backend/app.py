@@ -128,8 +128,15 @@ def save_uploaded_tif(image_file) -> tuple[str, Path, Path]:
     safe_name = secure_filename(image_file.filename) or f'input{suffix}'
     upload_path = UPLOAD_DIR / f'{run_id}_{safe_name}'
     preview_path = UPLOAD_DIR / f'{run_id}_preview.png'
-    image_file.save(upload_path)
-    create_preview_png(upload_path, preview_path)
+
+    try:
+        image_file.save(upload_path)
+        create_preview_png(upload_path, preview_path)
+    finally:
+        # Windows may keep uploaded files locked a bit longer unless the request-side
+        # file handle is explicitly closed before the training subprocess reads it.
+        image_file.close()
+
     return run_id, upload_path, preview_path
 
 
@@ -274,6 +281,7 @@ def invert():
     ]
 
     try:
+        print(f'[invert] running command: {command}')
         result = subprocess.run(
             command,
             cwd=PROJECT_ROOT,
@@ -281,12 +289,29 @@ def invert():
             capture_output=True,
             text=True,
         )
+        print('[invert] stdout:')
+        print(result.stdout)
+        print('[invert] stderr:')
+        print(result.stderr)
     except subprocess.CalledProcessError as exc:
+        print('[invert] subprocess failed')
+        print(f'[invert] command: {command}')
+        print('[invert] stdout:')
+        print(exc.stdout)
+        print('[invert] stderr:')
+        print(exc.stderr)
         return jsonify({
             'error': '算法运行失败',
             'algorithm': algorithm,
             'stdout': exc.stdout,
             'stderr': exc.stderr,
+        }), 500
+    except Exception as exc:
+        import traceback
+        print('[invert] unexpected error:')
+        traceback.print_exc()
+        return jsonify({
+            'error': f'后端异常: {exc}'
         }), 500
 
     metrics_path = run_output_dir / 'metrics.json'
@@ -344,4 +369,4 @@ init_db()
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)

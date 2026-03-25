@@ -102,7 +102,7 @@ def main():
     mae = mean_absolute_error(y_test, y_pred)
     re = np.mean(np.abs((y_test - y_pred) / y_test)) * 100
 
-    print(f'    测试集 R² : {r2:.4f}')
+    print(f'    测试集 R2 : {r2:.4f}')
     print(f'    测试集 RMSE : {rmse:.4f}')
 
     plt.figure(figsize=(8, 6))
@@ -112,7 +112,7 @@ def main():
     plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='1:1 Line')
     plt.xlabel(f'Measured {target_col}')
     plt.ylabel(f'Predicted {target_col}')
-    plt.title(f'SVR Model Evaluation\nR²={r2:.3f}, RMSE={rmse:.3f}')
+    plt.title(f'SVR Model Evaluation\nR2={r2:.3f}, RMSE={rmse:.3f}')
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.savefig(scatter_plot_path, dpi=300)
