@@ -1,0 +1,12 @@
+numpy==1.26.4
+pandas==2.2.2
+matplotlib==3.8.4
+scipy==1.13.1
+scikit-learn==1.4.2
+rasterio==1.4.1
+joblib==1.4.2
+xgboost==2.0.3
+flask==3.0.3
+fastapi==0.115.0
+uvicorn==0.30.6
+# sqlite3 is included in Python's standard library; no extra package is required for history persistence.

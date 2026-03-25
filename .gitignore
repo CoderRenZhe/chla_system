@@ -1,0 +1,35 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local database
+data/chla_system.db
+
+# Runtime uploads and generated previews
+data/raw/uploads/
+
+# Model outputs
+data/output/
+
+# Local large/raw data that usually should not be shared
+# Remove these rules if you want Git to track the sample data files.
+data/raw/Sentinel2.tif
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp

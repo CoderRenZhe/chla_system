@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遥感图像反演系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        /* 导航栏样式 */
+        .navbar {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            font-size: 1.8rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        /* 主要内容区域 */
+        .main-content {
+            min-height: 600px;
+            padding: 30px;
+        }
+
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #f8fbff 0%, #edf4fc 100%);
+            border: 1px solid #dfeaf5;
+            border-radius: 14px;
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #6b7c93;
+            margin-bottom: 15px;
+            letter-spacing: 0.04em;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sidebar-link {
+            width: 100%;
+            border: 1px solid #d6e4f2;
+            background: white;
+            color: #2c3e50;
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            border-color: #3498db;
+            background: #f6fbff;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 8px 18px rgba(52, 152, 219, 0.22);
+        }
+
+        .content-panel {
+            min-width: 0;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 60px 20px;
+        }
+
+        .history-actions a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        /* 登录/注册页面样式 */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+        }
+        
+        .auth-box {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .auth-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .auth-subtitle {
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .auth-btn:hover {
+            background: linear-gradient(to right, #2980b9, #1a252f);
+        }
+        
+        .auth-toggle {
+            text-align: center;
+            margin-top: 25px;
+            color: #7f8c8d;
+        }
+        
+        .toggle-link {
+            color: #3498db;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .toggle-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* 主系统界面样式 */
+        .dashboard-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .dashboard-subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            border: 1px solid #eee;
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            color: #3498db;
+        }
+        
+        /* 上传区域样式 */
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-area:hover {
+            background-color: #f8f9fa;
+            border-color: #2980b9;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .upload-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .upload-content {
+            width: 100%;
+        }
+
+        .upload-preview-image {
+            max-width: 100%;
+            max-height: 360px;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            background-color: #000;
+        }
+        
+        .file-list {
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .file-name {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .file-actions button {
+            background-color: transparent;
+            border: none;
+            color: #3498db;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 1.1rem;
+        }
+        
+        /* 算法选择样式 */
+        .algorithm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .algorithm-option {
+            border: 2px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .algorithm-option:hover {
+            border-color: #3498db;
+            background-color: #f8fafc;
+        }
+        
+        .algorithm-option.selected {
+            border-color: #3498db;
+            background-color: #e8f4fc;
+        }
+        
+        .algorithm-icon {
+            font-size: 2rem;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .algorithm-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .algorithm-desc {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+        
+        /* 反演结果样式 */
+        .result-container {
+            text-align: center;
+        }
+
+        .result-image-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 380px;
+            padding: 14px;
+            margin-bottom: 18px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #fbfdff 0%, #f4f8fc 100%);
+            box-shadow: inset 0 0 0 1px rgba(218, 228, 238, 0.85);
+        }
+        
+        .result-image {
+            max-width: 100%;
+            max-height: 350px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            object-fit: contain;
+        }
+
+        .result-empty-state {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .result-empty-state .upload-icon {
+            margin-bottom: 0;
+        }
+
+        .result-empty-state .upload-text {
+            margin-bottom: 0;
+        }
+        
+        .result-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .invert-btn {
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            color: white;
+        }
+        
+        .download-btn {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        /* 评价指标样式 */
+        .metrics-container {
+            margin-top: 20px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .metric-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .metric-card.good {
+            border-left-color: #27ae60;
+        }
+        
+        .metric-card.fair {
+            border-left-color: #f39c12;
+        }
+        
+        .metric-card.poor {
+            border-left-color: #e74c3c;
+        }
+        
+        .metric-name {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .metric-unit {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-left: 2px;
+        }
+        
+        .metric-description {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 8px;
+        }
+        
+        .chart-container {
+            margin-top: 20px;
+            height: 160px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .auth-box {
+                padding: 30px 20px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+
+            .workspace-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .result-actions {
+                flex-direction: column;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* 状态消息 */
+        .status-message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .success {
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #a3e4c1;
+        }
+        
+        .error {
+            background-color: #fde0dc;
+            color: #e74c3c;
+            border: 1px solid #f5b7b1;
+        }
+        
+        .info {
+            background-color: #d6eaf8;
+            color: #3498db;
+            border: 1px solid #aed6f1;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 历史记录样式 */
+        .history-container {
+            margin-top: 30px;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .history-table th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .history-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .history-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-good {
+            background-color: #d5f4e6;
+            color: #27ae60;
+        }
+        
+        .badge-fair {
+            background-color: #fef5e7;
+            color: #f39c12;
+        }
+        
+        .badge-poor {
+            background-color: #fde0dc;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- 导航栏 -->
+            <div class="navbar" v-if="isLoggedIn">
+                <div class="logo">
+                    <i class="fas fa-satellite"></i>
+                    <span>遥感图像反演系统</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">{{ userInitials }}</div>
+                    <span>{{ username }}</span>
+                    <button class="logout-btn" @click="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
+                </div>
+            </div>
+            
+            <!-- 主要内容区域 -->
+            <div class="main-content">
+                <!-- 登录/注册界面 -->
+                <div v-if="!isLoggedIn" class="auth-container">
+                    <div class="auth-box">
+                        <h2 class="auth-title">{{ isLoginMode ? '用户登录' : '用户注册' }}</h2>
+                        <p class="auth-subtitle">{{ isLoginMode ? '请输入您的账号和密码' : '创建新账户' }}</p>
+                        
+                        <!-- 状态消息 -->
+                        <div v-if="authMessage" class="status-message" :class="authMessageType">
+                            {{ authMessage }}
+                        </div>
+                        
+                        <form @submit.prevent="handleAuth">
+                            <div class="form-group">
+                                <label class="form-label">用户名</label>
+                                <input 
+                                    type="text" 
+                                    class="form-input" 
+                                    v-model="authForm.username" 
+                                    placeholder="请输入用户名"
+                                    required
+                                >
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">密码</label>
+                                <input 
+                                    type="password" 
+                                    class="form-input" 
+                                    v-model="authForm.password" 
+                                    placeholder="请输入密码"
+                                    required
+                                >
+                            </div>
+                            
+                            <div v-if="!isLoginMode" class="form-group">
+                                <label class="form-label">确认密码</label>
+                                <input 
+                                    type="password" 
+                                    class="form-input" 
+                                    v-model="authForm.confirmPassword" 
+                                    placeholder="请再次输入密码"
+                                    required
+                                >
+                            </div>
+                            
+                            <button type="submit" class="auth-btn">
+                                {{ isLoginMode ? '登录' : '注册' }}
+                            </button>
+                        </form>
+                        
+                        <div class="auth-toggle">
+                            <span>{{ isLoginMode ? '还没有账户？' : '已有账户？' }}</span>
+                            <span class="toggle-link" @click="toggleAuthMode">
+                                {{ isLoginMode ? '立即注册' : '立即登录' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 系统主界面 -->
+                <div v-else class="workspace-layout">
+                    <aside class="sidebar">
+                        <div class="sidebar-title">功能导航</div>
+                        <div class="sidebar-nav">
+                            <button class="sidebar-link" :class="{ active: activeView === 'analysis' }" @click="switchView('analysis')">
+                                <i class="fas fa-flask"></i>
+                                <span>反演分析</span>
+                            </button>
+                            <button class="sidebar-link" :class="{ active: activeView === 'history' }" @click="switchView('history')">
+                                <i class="fas fa-history"></i>
+                                <span>历史记录</span>
+                            </button>
+                        </div>
+                    </aside>
+
+                    <div class="content-panel">
+                        <template v-if="activeView === 'analysis'">
+                            <h2 class="dashboard-title">遥感图像反演系统</h2>
+                            <p class="dashboard-subtitle">上传遥感图像，选择算法进行反演，获取浓度分布图及评价指标</p>
+
+                            <div v-if="statusMessage" class="status-message" :class="statusMessageType">
+                                {{ statusMessage }}
+                            </div>
+
+                            <div class="dashboard-grid">
+                                <!-- 图像上传区域 -->
+                                <div class="card">
+                                    <h3 class="card-title"><i class="fas fa-cloud-upload-alt"></i> 上传遥感图像</h3>
+                                    <div class="upload-area" @click="triggerFileInput" @dragover.prevent @drop="handleDrop">
+                                        <div v-if="uploadedPreviewUrl" class="upload-content">
+                                            <img :src="uploadedPreviewUrl" class="upload-preview-image" alt="上传影像预览">
+                                        </div>
+                                        <div v-else-if="isUploadingPreview" class="upload-content">
+                                            <div class="loading-spinner"></div>
+                                            <p class="upload-text">正在上传并生成预览，请稍候...</p>
+                                        </div>
+                                        <div v-else class="upload-content">
+                                            <div class="upload-icon">
+                                                <i class="fas fa-file-upload"></i>
+                                            </div>
+                                            <p class="upload-text">点击或拖拽文件到此处上传</p>
+                                            <p class="upload-text">支持格式：TIF, TIFF</p>
+                                            <button class="upload-btn">选择文件</button>
+                                        </div>
+                                        <input 
+                                            type="file" 
+                                            ref="fileInput" 
+                                            @change="handleFileSelect" 
+                                            accept=".tif,.tiff"
+                                            style="display: none;"
+                                        >
+                                    </div>
+
+                                    <div v-if="uploadedFiles.length > 0" class="file-list">
+                                        <h4>已上传文件</h4>
+                                        <div v-for="(file, index) in uploadedFiles" :key="index" class="file-item">
+                                            <span class="file-name">
+                                                <i class="fas fa-image"></i> {{ file.name }}
+                                            </span>
+                                            <div class="file-actions">
+                                                <button @click="downloadFile(file)" title="下载">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button @click="removeFile(index)" title="删除">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 算法选择区域 -->
+                                <div class="card">
+                                    <h3 class="card-title"><i class="fas fa-cogs"></i> 选择反演算法</h3>
+                                    <div class="algorithm-grid">
+                                        <div 
+                                            v-for="algorithm in algorithms" 
+                                            :key="algorithm.id"
+                                            class="algorithm-option"
+                                            :class="{ selected: selectedAlgorithm === algorithm.id }"
+                                            @click="selectAlgorithm(algorithm.id)"
+                                        >
+                                            <div class="algorithm-icon">
+                                                <i :class="algorithm.icon"></i>
+                                            </div>
+                                            <div class="algorithm-name">{{ algorithm.name }}</div>
+                                            <div class="algorithm-desc">{{ algorithm.description }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 反演结果显示区域 -->
+                                <div class="card">
+                                    <h3 class="card-title"><i class="fas fa-chart-line"></i> 浓度反演结果</h3>
+                                    
+                                    <div v-if="isProcessing" class="loading">
+                                        <div class="loading-spinner"></div>
+                                        <p>正在处理中，请稍候...</p>
+                                    </div>
+                                    
+                                    <div v-else class="result-container">
+                                        <div class="result-actions">
+                                            <button class="action-btn invert-btn" @click="runInversion" :disabled="!canRunInversion">
+                                                <i class="fas fa-play"></i> 运行反演
+                                            </button>
+                                            <button v-if="resultImage" class="action-btn download-btn" @click="downloadResult">
+                                                <i class="fas fa-download"></i> 下载结果
+                                            </button>
+                                        </div>
+
+                                        <div v-if="resultImage">
+                                            <div class="result-image-wrapper">
+                                                <img :src="resultImage" class="result-image" alt="浓度反演结果">
+                                            </div>
+                                            <p>反演算法：{{ getAlgorithmName(selectedAlgorithm) }}</p>
+                                        </div>
+                                        <div v-else>
+                                            <div class="upload-area result-empty-state" style="border-color: #ddd;">
+                                                <div class="upload-icon">
+                                                    <i class="fas fa-chart-bar"></i>
+                                                </div>
+                                                <p class="upload-text">反演结果将显示在这里</p>
+                                                <p class="upload-text">请先上传 GeoTIFF 并选择算法</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="resultImage" class="metrics-container">
+                                <div class="card">
+                                    <h3 class="card-title"><i class="fas fa-chart-bar"></i> 反演精度评价指标</h3>
+                                    <div class="metrics-grid">
+                                        <div class="metric-card" :class="getMetricClass(currentMetrics.rmse, 'rmse')">
+                                            <div class="metric-name">均方根误差 (RMSE)</div>
+                                            <div class="metric-value">{{ currentMetrics.rmse.toFixed(3) }}<span class="metric-unit">μg/m³</span></div>
+                                            <div class="metric-description">值越小，精度越高</div>
+                                        </div>
+                                        <div class="metric-card" :class="getMetricClass(currentMetrics.mae, 'mae')">
+                                            <div class="metric-name">平均绝对误差 (MAE)</div>
+                                            <div class="metric-value">{{ currentMetrics.mae.toFixed(3) }}<span class="metric-unit">μg/m³</span></div>
+                                            <div class="metric-description">值越小，精度越高</div>
+                                        </div>
+                                        <div class="metric-card" :class="getMetricClass(currentMetrics.r2, 'r2')">
+                                            <div class="metric-name">相关系数 (R²)</div>
+                                            <div class="metric-value">{{ currentMetrics.r2.toFixed(3) }}</div>
+                                            <div class="metric-description">值越接近1，拟合越好</div>
+                                        </div>
+                                        <div class="metric-card" :class="getMetricClass(currentMetrics.re, 're')">
+                                            <div class="metric-name">相对误差 (RE)</div>
+                                            <div class="metric-value">{{ currentMetrics.re.toFixed(2) }}<span class="metric-unit">%</span></div>
+                                            <div class="metric-description">值越小，精度越高</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="chart-container">
+                                        <canvas ref="errorChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template v-else>
+                            <h2 class="dashboard-title">反演历史记录</h2>
+                            <p class="dashboard-subtitle">系统会自动保存每次反演结果，刷新页面后历史仍然存在。</p>
+
+                            <div v-if="statusMessage" class="status-message" :class="statusMessageType">
+                                {{ statusMessage }}
+                            </div>
+
+                            <div class="history-container">
+                                <div class="card">
+                                    <h3 class="card-title"><i class="fas fa-history"></i> 历史记录列表</h3>
+                                    <div v-if="historyLoading" class="loading">
+                                        <div class="loading-spinner"></div>
+                                        <p>正在加载历史记录...</p>
+                                    </div>
+                                    <div v-else-if="history.length === 0" class="history-empty">
+                                        <p>暂无历史记录，先去“反演分析”页运行一次任务。</p>
+                                    </div>
+                                    <table v-else class="history-table">
+                                        <thead>
+                                            <tr>
+                                                <th>序号</th>
+                                                <th>算法</th>
+                                                <th>时间</th>
+                                                <th>RMSE</th>
+                                                <th>MAE</th>
+                                                <th>R²</th>
+                                                <th>RE</th>
+                                                <th>评价</th>
+                                                <th>结果</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(record, index) in history" :key="record.id || index">
+                                                <td>{{ index + 1 }}</td>
+                                                <td>{{ record.algorithm_name }}</td>
+                                                <td>{{ formatHistoryTime(record.created_at) }}</td>
+                                                <td>{{ Number(record.rmse).toFixed(3) }}</td>
+                                                <td>{{ Number(record.mae).toFixed(3) }}</td>
+                                                <td>{{ Number(record.r2).toFixed(3) }}</td>
+                                                <td>{{ Number(record.re).toFixed(2) }}%</td>
+                                                <td>
+                                                    <span class="history-badge" :class="getEvaluationBadgeClass(record.r2)">
+                                                        {{ getEvaluationText(record.r2) }}
+                                                    </span>
+                                                </td>
+                                                <td class="history-actions">
+                                                    <a :href="buildApiUrl(record.result_image_url)" target="_blank" rel="noopener noreferrer">查看结果</a>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                // 用户认证相关
+                isLoggedIn: false,
+                isLoginMode: true,
+                authForm: {
+                    username: '',
+                    password: '',
+                    confirmPassword: ''
+                },
+                authMessage: '',
+                authMessageType: '',
+                username: '',
+
+                // 文件上传相关
+                uploadedFiles: [],
+
+                // 算法选择相关
+                algorithms: [
+                    { id: 'rf', name: '随机森林', description: '基于多棵决策树的集成回归算法', icon: 'fas fa-tree' },
+                    { id: 'svr', name: '支持向量机', description: '基于核函数的回归算法', icon: 'fas fa-project-diagram' },
+                    { id: 'xgb', name: 'XGBoost', description: '基于梯度提升的集成回归算法', icon: 'fas fa-chart-line' }
+                ],
+                selectedAlgorithm: 'rf',
+                activeView: 'analysis',
+
+                // 反演结果相关
+                isProcessing: false,
+                resultImage: '',
+                resultTifUrl: '',
+                scatterPlotUrl: '',
+                uploadedPreviewUrl: '',
+                isUploadingPreview: false,
+                currentMetrics: {
+                    rmse: 0,
+                    mae: 0,
+                    r2: 0,
+                    re: 0
+                },
+
+                // 历史记录
+                history: [],
+                historyLoading: false,
+
+                // 状态消息
+                statusMessage: '',
+                statusMessageType: '',
+
+                // 图表实例
+                errorChart: null,
+                apiBase: window.location.origin && window.location.origin.startsWith('http')
+                    ? window.location.origin
+                    : 'http://127.0.0.1:5000'
+            },
+            computed: {
+                userInitials() {
+                    return '城';
+                },
+                canRunInversion() {
+                    return this.uploadedFiles.length > 0 && this.selectedAlgorithm !== null;
+                }
+            },
+            methods: {
+                // 用户认证方法
+                toggleAuthMode() {
+                    this.isLoginMode = !this.isLoginMode;
+                    this.authMessage = '';
+                },
+
+                handleAuth() {
+                    // 简单验证
+                    if (!this.authForm.username || !this.authForm.password) {
+                        this.showAuthMessage('请输入用户名和密码', 'error');
+                        return;
+                    }
+
+                    if (!this.isLoginMode && this.authForm.password !== this.authForm.confirmPassword) {
+                        this.showAuthMessage('两次输入的密码不一致', 'error');
+                        return;
+                    }
+
+                    // 模拟认证过程
+                    this.isProcessing = true;
+
+                    // 模拟API调用延迟
+                    setTimeout(() => {
+                        this.isProcessing = false;
+
+                        if (this.isLoginMode) {
+                            // 模拟登录成功
+                            this.isLoggedIn = true;
+                            this.username = this.authForm.username;
+                            this.showStatusMessage('登录成功！', 'success');
+                            this.fetchHistory();
+                        } else {
+                            // 模拟注册成功并自动登录
+                            this.isLoggedIn = true;
+                            this.username = this.authForm.username;
+                            this.showStatusMessage('注册成功！已自动登录。', 'success');
+                            this.fetchHistory();
+                        }
+
+                        // 重置表单
+                        this.authForm = {
+                            username: '',
+                            password: '',
+                            confirmPassword: ''
+                        };
+                    }, 1000);
+                },
+
+                logout() {
+                    this.isLoggedIn = false;
+                    this.username = '';
+                    this.isLoginMode = true;
+                    this.showAuthMessage('您已成功退出登录', 'info');
+                },
+
+                // 文件上传方法
+                triggerFileInput() {
+                    this.$refs.fileInput.click();
+                },
+
+                handleFileSelect(event) {
+                    const files = event.target.files;
+                    this.addFiles(files);
+                },
+
+                handleDrop(event) {
+                    event.preventDefault();
+                    const files = event.dataTransfer.files;
+                    this.addFiles(files);
+                },
+
+                async addFiles(files) {
+                    const accepted = ['.tif', '.tiff'];
+                    this.uploadedFiles = [];
+                    this.uploadedPreviewUrl = '';
+                    this.isUploadingPreview = false;
+
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const lowerName = file.name.toLowerCase();
+                        const isValid = accepted.some(ext => lowerName.endsWith(ext));
+                        if (!isValid) {
+                            this.showStatusMessage(`文件 ${file.name} 格式不支持，请上传 TIF 或 TIFF 文件`, 'error');
+                            continue;
+                        }
+
+                        if (file.size > 512 * 1024 * 1024) {
+                            this.showStatusMessage(`文件 ${file.name} 太大，请上传小于 512MB 的文件`, 'error');
+                            continue;
+                        }
+
+                        try {
+                            this.isUploadingPreview = true;
+                            this.showStatusMessage('已接收文件，正在生成预览...', 'info');
+                            const formData = new FormData();
+                            formData.append('image', file);
+                            const response = await fetch(this.buildApiUrl('/api/upload-preview'), {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const result = await response.json();
+                            if (!response.ok) {
+                                throw new Error(result.error || '影像预览生成失败');
+                            }
+
+                            this.uploadedFiles.push({
+                                name: file.name,
+                                size: this.formatFileSize(file.size),
+                                type: file.type,
+                                file: file,
+                                uploadedImage: result.uploaded_image
+                            });
+                            this.uploadedPreviewUrl = this.buildApiUrl(result.preview_image_url);
+                            this.showStatusMessage(`已上传影像：${file.name}`, 'success');
+                        } catch (error) {
+                            this.showStatusMessage(error.message || '影像预览生成失败', 'error');
+                        } finally {
+                            this.isUploadingPreview = false;
+                        }
+                        break;
+                    }
+
+                    this.$refs.fileInput.value = '';
+                },
+
+                removeFile(index) {
+                    this.uploadedFiles.splice(index, 1);
+                    if (this.uploadedFiles.length === 0) {
+                        this.resultImage = '';
+                        this.resultTifUrl = '';
+                        this.scatterPlotUrl = '';
+                        this.uploadedPreviewUrl = '';
+                        this.isUploadingPreview = false;
+                    }
+                },
+
+                downloadFile(file) {
+                    const link = document.createElement('a');
+                    link.download = file.name;
+                    link.href = URL.createObjectURL(file.file);
+                    link.click();
+                    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+                },
+
+                formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                },
+
+                // 算法选择方法
+                selectAlgorithm(id) {
+                    this.selectedAlgorithm = id;
+                },
+
+                getAlgorithmName(id) {
+                    const algorithm = this.algorithms.find(a => a.id === id);
+                    return algorithm ? algorithm.name : '未选择';
+                },
+
+                buildApiUrl(path) {
+                    if (path.startsWith('http://') || path.startsWith('https://')) {
+                        return path;
+                    }
+                    return `${this.apiBase}${path}`;
+                },
+
+                // 反演方法
+                async runInversion() {
+                    if (!this.canRunInversion) return;
+
+                    const formData = new FormData();
+                    formData.append('algorithm', this.selectedAlgorithm);
+                    formData.append('image', this.uploadedFiles[0].file);
+
+                    this.isProcessing = true;
+
+                    try {
+                        const response = await fetch(this.buildApiUrl('/api/invert'), {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(result.error || '反演失败');
+                        }
+
+                        this.uploadedPreviewUrl = this.buildApiUrl(result.preview_image_url);
+                        this.resultImage = this.buildApiUrl(result.result_image_url);
+                        this.resultTifUrl = this.buildApiUrl(result.result_tif_url);
+                        this.scatterPlotUrl = this.buildApiUrl(result.scatter_plot_url);
+                        this.currentMetrics = {
+                            rmse: Number(result.metrics.rmse || 0),
+                            mae: Number(result.metrics.mae || 0),
+                            r2: Number(result.metrics.r2 || 0),
+                            re: Number(result.metrics.re || 0)
+                        };
+
+                        await this.fetchHistory();
+                        this.$nextTick(() => {
+                            this.drawErrorChart();
+                        });
+                        this.showStatusMessage('反演完成！', 'success');
+                    } catch (error) {
+                        this.showStatusMessage(error.message || '反演失败，请检查后端日志', 'error');
+                    } finally {
+                        this.isProcessing = false;
+                    }
+                },
+
+                switchView(view) {
+                    this.activeView = view;
+                    if (view === 'history') {
+                        this.fetchHistory();
+                    }
+                },
+
+                async fetchHistory() {
+                    this.historyLoading = true;
+                    try {
+                        const response = await fetch(this.buildApiUrl('/api/history'));
+                        const result = await response.json();
+                        if (!response.ok) {
+                            throw new Error(result.error || '历史记录加载失败');
+                        }
+                        this.history = result.items || [];
+                    } catch (error) {
+                        this.showStatusMessage(error.message || '历史记录加载失败', 'error');
+                    } finally {
+                        this.historyLoading = false;
+                    }
+                },
+
+                formatHistoryTime(value) {
+                    if (!value) return '-';
+
+                    const raw = String(value).trim();
+                    const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+                    const utcText = /(?:Z|[+-]\d{2}:?\d{2})$/.test(normalized) ? normalized : `${normalized}Z`;
+                    const date = new Date(utcText);
+                    if (Number.isNaN(date.getTime())) {
+                        return raw.replace('T', ' ').slice(0, 19);
+                    }
+
+                    return new Intl.DateTimeFormat('zh-CN', {
+                        timeZone: 'Asia/Shanghai',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    }).format(date).replaceAll('/', '-');
+                },
+
+                getMetricClass(value, metricType) {
+                    if (metricType === 'r2') {
+                        if (value >= 0.9) return 'good';
+                        if (value >= 0.8) return 'fair';
+                        return 'poor';
+                    } else if (metricType === 'rmse' || metricType === 'mae') {
+                        if (value <= 0.2) return 'good';
+                        if (value <= 0.3) return 'fair';
+                        return 'poor';
+                    } else if (metricType === 're') {
+                        if (value <= 10) return 'good';
+                        if (value <= 15) return 'fair';
+                        return 'poor';
+                    }
+                    return '';
+                },
+
+                getEvaluationBadgeClass(r2) {
+                    if (r2 >= 0.9) return 'badge-good';
+                    if (r2 >= 0.8) return 'badge-fair';
+                    return 'badge-poor';
+                },
+
+                getEvaluationText(r2) {
+                    if (r2 >= 0.9) return '优秀';
+                    if (r2 >= 0.8) return '良好';
+                    return '一般';
+                },
+
+                drawErrorChart() {
+                    if (!this.$refs.errorChart) return;
+                    if (this.errorChart) {
+                        this.errorChart.destroy();
+                    }
+
+                    const ctx = this.$refs.errorChart.getContext('2d');
+                    this.errorChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['RMSE', 'MAE', 'R²', 'RE'],
+                            datasets: [{
+                                label: `${this.getAlgorithmName(this.selectedAlgorithm)} 指标`,
+                                data: [
+                                    this.currentMetrics.rmse,
+                                    this.currentMetrics.mae,
+                                    this.currentMetrics.r2,
+                                    this.currentMetrics.re
+                                ],
+                                backgroundColor: [
+                                    'rgba(52, 152, 219, 0.7)',
+                                    'rgba(46, 204, 113, 0.7)',
+                                    'rgba(155, 89, 182, 0.7)',
+                                    'rgba(241, 196, 15, 0.7)'
+                                ],
+                                borderColor: [
+                                    '#3498db',
+                                    '#2ecc71',
+                                    '#9b59b6',
+                                    '#f1c40f'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: '反演评价指标'
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                },
+
+                downloadResult() {
+                    if (!this.resultTifUrl) return;
+
+                    this.showStatusMessage('正在下载反演结果...', 'info');
+                    const link = document.createElement('a');
+                    link.download = `${this.getAlgorithmName(this.selectedAlgorithm)}_result.tif`;
+                    link.href = this.resultTifUrl;
+                    link.click();
+
+                    setTimeout(() => {
+                        this.showStatusMessage('反演结果下载完成', 'success');
+                    }, 500);
+                },
+
+                // 消息显示方法
+                showAuthMessage(message, type) {
+                    this.authMessage = message;
+                    this.authMessageType = type;
+
+                    setTimeout(() => {
+                        this.authMessage = '';
+                    }, 3000);
+                },
+
+                showStatusMessage(message, type) {
+                    this.statusMessage = message;
+                    this.statusMessageType = type;
+
+                    setTimeout(() => {
+                        this.statusMessage = '';
+                    }, 3000);
+                }
+            },
+            mounted() {
+                // 模拟初始状态：已有用户登录
+                // 在实际应用中，这里应该检查本地存储中的登录状态
+                // this.isLoggedIn = true;
+                // this.username = "遥感用户";
+                if (this.isLoggedIn) {
+                    this.fetchHistory();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
