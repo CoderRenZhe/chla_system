@@ -1,7 +1,7 @@
 # CHLA 遥感图像反演系统 Windows 使用说明
 
 这份文档专门给 Windows 用户使用。
-如果你同学是在 Windows 上运行这个项目，优先看这份说明，不要直接照搬 Linux 里的 `bin/activate` 写法。
+如果你是在 Windows 上运行这个项目，优先看这份说明，不要直接照搬 Linux 里的 `bin/activate` 写法。
 
 ## 1. 从 GitHub 拉代码到本机
 
